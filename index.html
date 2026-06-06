@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Force Triangle Equilibrium Simulation</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f6f8;
+    color: #111;
+  }
+
+  .container {
+    max-width: 1180px;
+    margin: 18px auto;
+    padding: 16px;
+  }
+
+  h1 {
+    text-align: center;
+    margin: 6px 0 6px;
+    font-size: 28px;
+  }
+
+  .subtitle {
+    text-align: center;
+    margin: 0 0 16px;
+    color: #444;
+    font-size: 15px;
+  }
+
+  .simulation {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  .panel {
+    background: #fff;
+    border: 3px solid #111;
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 5px 16px rgba(0,0,0,0.08);
+  }
+
+  .panel-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 4px 0 10px;
+  }
+
+  svg {
+    width: 100%;
+    height: 500px;
+    background: #fff;
+    border-radius: 12px;
+  }
+
+  .message {
+    min-height: 38px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 800;
+    margin: 10px 0 8px;
+  }
+
+  .correct { color: #0a7a22; }
+  .wrong { color: #c51616; }
+
+  .btn-row {
+    text-align: center;
+    margin-top: 6px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  button {
+    border: none;
+    background: #111;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  button:hover { opacity: 0.88; }
+
+  .note {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.4;
+    margin-top: 8px;
+  }
+
+  .force, .theta-piece {
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .force:active, .theta-piece:active {
+    cursor: grabbing;
+  }
+
+  .force-line {
+    stroke: #111;
+    stroke-width: 8;
+    stroke-linecap: round;
+  }
+
+  .force-hit {
+    stroke: transparent;
+    stroke-width: 40;
+    stroke-linecap: round;
+  }
+
+  .force-label {
+    font-size: 30px;
+    font-weight: 800;
+    pointer-events: none;
+  }
+
+  .workspace {
+    fill: #fafafa;
+    stroke: #d7d7d7;
+    stroke-width: 2;
+  }
+
+  .tray {
+    fill: #f0f0f0;
+    stroke: #cfcfcf;
+    stroke-width: 2;
+  }
+
+  .tray-text {
+    font-size: 14px;
+    font-weight: 700;
+    fill: #555;
+  }
+
+  .theta-arc {
+    fill: none;
+    stroke: #111;
+    stroke-width: 5;
+  }
+
+  .theta-label {
+    font-size: 30px;
+    font-weight: 800;
+    pointer-events: none;
+  }
+
+  .developer {
+    text-align: center;
+    font-size: 10px;
+    margin-top: 16px;
+    color: #444;
+  }
+
+  @media (max-width: 880px) {
+    .simulation { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>Force Triangle Equilibrium Simulation</h1>
+  <p class="subtitle">Drag the forces and the θ label to build a correct force triangle.</p>
+
+  <div class="simulation">
+    <div class="panel">
+      <div class="panel-title">Free-body diagram</div>
+
+      <svg viewBox="0 0 520 500" aria-label="Free-body diagram">
+        <defs>
+          <marker id="arrowLeft" markerWidth="12" markerHeight="12" refX="10" refY="6"
+                  orient="auto" markerUnits="strokeWidth">
+            <path d="M2,2 L10,6 L2,10 Z" fill="#111"></path>
+          </marker>
+        </defs>
+
+        <line x1="72" y1="56" x2="370" y2="56" stroke="#111" stroke-width="5"/>
+        <g stroke="#111" stroke-width="3">
+          <line x1="86" y1="34" x2="108" y2="56"/>
+          <line x1="118" y1="34" x2="140" y2="56"/>
+          <line x1="150" y1="34" x2="172" y2="56"/>
+          <line x1="182" y1="34" x2="204" y2="56"/>
+          <line x1="214" y1="34" x2="236" y2="56"/>
+          <line x1="246" y1="34" x2="268" y2="56"/>
+          <line x1="278" y1="34" x2="300" y2="56"/>
+          <line x1="310" y1="34" x2="332" y2="56"/>
+          <line x1="342" y1="34" x2="364" y2="56"/>
+        </g>
+
+        <circle cx="220" cy="68" r="4" fill="#111"/>
+        <line x1="220" y1="68" x2="332" y2="266" stroke="#111" stroke-width="6"/>
+        <circle cx="332" cy="266" r="23" fill="#fff" stroke="#111" stroke-width="5"/>
+
+        <line x1="220" y1="68" x2="220" y2="196" stroke="#888" stroke-width="2"/>
+        <path d="M220 126 A58 58 0 0 1 252 116" fill="none" stroke="#111" stroke-width="3"/>
+        <text x="248" y="134" font-size="24" font-weight="800">θ</text>
+
+        <line x1="332" y1="266" x2="256" y2="132" stroke="#111" stroke-width="7"
+              marker-end="url(#arrowLeft)" stroke-linecap="round"/>
+        <text x="244" y="186" font-size="30" font-weight="800">T</text>
+
+        <line x1="332" y1="266" x2="332" y2="430" stroke="#111" stroke-width="7"
+              marker-end="url(#arrowLeft)" stroke-linecap="round"/>
+        <text x="350" y="394" font-size="28" font-weight="800">W = mg</text>
+
+        <line x1="332" y1="266" x2="486" y2="266" stroke="#111" stroke-width="7"
+              marker-end="url(#arrowLeft)" stroke-linecap="round"/>
+        <text x="447" y="244" font-size="30" font-weight="800">F</text>
+
+        <text x="35" y="470" font-size="25" font-weight="800">Equilibrium:  T + W + F = 0</text>
+      </svg>
+
+      <p class="note">
+        Arrange the force vectors to form one correct closed force triangle for equilibrium.
+      </p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Student activity</div>
+
+      <svg id="activitySvg" viewBox="0 0 520 500" aria-label="Force triangle activity">
+        <defs>
+          <marker id="arrowActivity" markerWidth="12" markerHeight="12" refX="10" refY="6"
+                  orient="auto" markerUnits="strokeWidth">
+            <path d="M2,2 L10,6 L2,10 Z" fill="#111"></path>
+          </marker>
+        </defs>
+
+        <rect class="workspace" x="22" y="22" width="476" height="325" rx="16"></rect>
+        <rect class="tray" x="22" y="366" width="476" height="110" rx="16"></rect>
+        <text class="tray-text" x="40" y="390">Drag the pieces from here.</text>
+
+        <g id="forceW" class="force" data-force="W">
+          <line class="force-hit" x1="0" y1="0" x2="0" y2="180"></line>
+          <line class="force-line" x1="0" y1="0" x2="0" y2="180" marker-end="url(#arrowActivity)"></line>
+          <text class="force-label" x="16" y="100">W</text>
+        </g>
+
+        <g id="forceF" class="force" data-force="F">
+          <line class="force-hit" x1="0" y1="0" x2="180" y2="0"></line>
+          <line class="force-line" x1="0" y1="0" x2="180" y2="0" marker-end="url(#arrowActivity)"></line>
+          <text class="force-label" x="82" y="-16">F</text>
+        </g>
+
+        <g id="forceT" class="force" data-force="T">
+          <line class="force-hit" x1="0" y1="0" x2="-180" y2="-180"></line>
+          <line class="force-line" x1="0" y1="0" x2="-180" y2="-180" marker-end="url(#arrowActivity)"></line>
+          <text class="force-label" x="-112" y="-108">T</text>
+        </g>
+
+        <g id="thetaPiece" class="theta-piece">
+          <rect x="-12" y="-12" width="70" height="56" fill="transparent"></rect>
+          <text class="theta-label" x="0" y="26">θ</text>
+        </g>
+      </svg>
+
+      <div id="message" class="message"></div>
+
+      <div class="btn-row">
+        <button id="checkBtn" type="button">Check Answer</button>
+        <button id="resetBtn" type="button">Reset</button>
+      </div>
+
+      <p class="note">
+        Any correct closed triangle is accepted. The θ label must be placed at the angle between W and T.
+      </p>
+    </div>
+  </div>
+
+  <div class="developer">Alan Kho</div>
+</div>
+
+<script>
+  const svg = document.getElementById("activitySvg");
+  const message = document.getElementById("message");
+  const resetBtn = document.getElementById("resetBtn");
+  const checkBtn = document.getElementById("checkBtn");
+
+  const vectorDefs = {
+    W: { dx: 0, dy: 180 },
+    F: { dx: 180, dy: 0 },
+    T: { dx: -180, dy: -180 }
+  };
+
+  const pieces = {
+    W: {
+      id: "W",
+      type: "force",
+      el: document.getElementById("forceW"),
+      start: { x: 78, y: 408 },
+      moved: false
+    },
+    F: {
+      id: "F",
+      type: "force",
+      el: document.getElementById("forceF"),
+      start: { x: 185, y: 440 },
+      moved: false
+    },
+    T: {
+      id: "T",
+      type: "force",
+      el: document.getElementById("forceT"),
+      start: { x: 452, y: 455 },
+      moved: false
+    },
+    theta: {
+      id: "theta",
+      type: "theta",
+      el: document.getElementById("thetaPiece"),
+      start: { x: 365, y: 408 },
+      moved: false
+    }
+  };
+
+  let activePiece = null;
+  let dragOffset = { x: 0, y: 0 };
+
+  /* The tolerance is intentionally not too small because students arrange the arrows manually. */
+  const connectTolerance = 52;
+  const thetaTolerance = 85;
+  const workspaceBottom = 350;
+
+  function setPosition(piece, x, y) {
+    piece.x = x;
+    piece.y = y;
+    piece.el.setAttribute("transform", `translate(${x}, ${y})`);
+  }
+
+  function resetSimulation(clearMessage = true) {
+    Object.values(pieces).forEach(piece => {
+      piece.moved = false;
+      setPosition(piece, piece.start.x, piece.start.y);
+    });
+
+    if (clearMessage) {
+      message.textContent = "";
+      message.className = "message";
+    }
+  }
+
+  function svgPoint(event) {
+    const pt = svg.createSVGPoint();
+    pt.x = event.clientX;
+    pt.y = event.clientY;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  }
+
+  function distance(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function getEndpoints(forceId) {
+    const piece = pieces[forceId];
+    const def = vectorDefs[forceId];
+
+    return {
+      tail: { x: piece.x, y: piece.y },
+      head: { x: piece.x + def.dx, y: piece.y + def.dy }
+    };
+  }
+
+  function allPiecesPlacedInWorkspace() {
+    return Object.values(pieces).every(piece => piece.moved && piece.y < workspaceBottom);
+  }
+
+  function allForcesPlacedInWorkspace() {
+    return ["W", "F", "T"].every(id => pieces[id].moved && pieces[id].y < workspaceBottom);
+  }
+
+  function getValidClosedTriangle() {
+    const permutations = [
+      ["W", "F", "T"], ["W", "T", "F"],
+      ["F", "W", "T"], ["F", "T", "W"],
+      ["T", "W", "F"], ["T", "F", "W"]
+    ];
+
+    const ep = {
+      W: getEndpoints("W"),
+      F: getEndpoints("F"),
+      T: getEndpoints("T")
+    };
+
+    for (const order of permutations) {
+      const [a, b, c] = order;
+
+      const firstJoin = distance(ep[a].head, ep[b].tail);
+      const secondJoin = distance(ep[b].head, ep[c].tail);
+      const thirdJoin = distance(ep[c].head, ep[a].tail);
+
+      if (
+        firstJoin <= connectTolerance &&
+        secondJoin <= connectTolerance &&
+        thirdJoin <= connectTolerance
+      ) {
+        return {
+          order,
+          ep,
+          joins: [
+            { x: (ep[a].head.x + ep[b].tail.x) / 2, y: (ep[a].head.y + ep[b].tail.y) / 2 },
+            { x: (ep[b].head.x + ep[c].tail.x) / 2, y: (ep[b].head.y + ep[c].tail.y) / 2 },
+            { x: (ep[c].head.x + ep[a].tail.x) / 2, y: (ep[c].head.y + ep[a].tail.y) / 2 }
+          ]
+        };
+      }
+    }
+
+    return null;
+  }
+
+  function getThetaVertex(triangle) {
+    if (!triangle) return null;
+
+    const epW = triangle.ep.W;
+    const epT = triangle.ep.T;
+
+    const possibleCommonPoints = [
+      { a: epW.tail, b: epT.tail },
+      { a: epW.tail, b: epT.head },
+      { a: epW.head, b: epT.tail },
+      { a: epW.head, b: epT.head }
+    ];
+
+    for (const item of possibleCommonPoints) {
+      if (distance(item.a, item.b) <= connectTolerance) {
+        return {
+          x: (item.a.x + item.b.x) / 2,
+          y: (item.a.y + item.b.y) / 2
+        };
+      }
+    }
+
+    return null;
+  }
+
+  function thetaIsCorrect(thetaVertex) {
+    if (!thetaVertex) return false;
+
+    /*
+      The draggable theta piece now contains only the θ symbol.
+      The check uses several points around the symbol so students do not need
+      to place it with pixel-perfect accuracy.
+    */
+    const t = pieces.theta;
+    const thetaAnchors = [
+      { x: t.x, y: t.y },
+      { x: t.x + 10, y: t.y + 13 },
+      { x: t.x + 20, y: t.y + 26 },
+      { x: t.x + 35, y: t.y + 20 }
+    ];
+
+    return thetaAnchors.some(anchor => distance(anchor, thetaVertex) <= thetaTolerance);
+  }
+
+  function showWrongAndReset() {
+    message.textContent = "Wrong, don't give up, try again!";
+    message.className = "message wrong";
+
+    setTimeout(() => {
+      resetSimulation(false);
+    }, 850);
+  }
+
+  function showCorrect() {
+    message.textContent = "Well done!";
+    message.className = "message correct";
+  }
+
+  function checkAnswer() {
+    if (!allForcesPlacedInWorkspace() || !pieces.theta.moved || pieces.theta.y >= workspaceBottom) {
+      showWrongAndReset();
+      return;
+    }
+
+    const triangle = getValidClosedTriangle();
+
+    if (!triangle) {
+      showWrongAndReset();
+      return;
+    }
+
+    const thetaVertex = getThetaVertex(triangle);
+
+    if (thetaIsCorrect(thetaVertex)) {
+      showCorrect();
+    } else {
+      showWrongAndReset();
+    }
+  }
+
+  function autoCheckWhenReady() {
+    if (allPiecesPlacedInWorkspace()) {
+      checkAnswer();
+    }
+  }
+
+  Object.values(pieces).forEach(piece => {
+    setPosition(piece, piece.start.x, piece.start.y);
+
+    piece.el.addEventListener("pointerdown", event => {
+      activePiece = piece;
+
+      const p = svgPoint(event);
+      dragOffset.x = p.x - piece.x;
+      dragOffset.y = p.y - piece.y;
+
+      piece.el.setPointerCapture(event.pointerId);
+      message.textContent = "";
+      message.className = "message";
+    });
+  });
+
+  svg.addEventListener("pointermove", event => {
+    if (!activePiece) return;
+
+    const p = svgPoint(event);
+    setPosition(activePiece, p.x - dragOffset.x, p.y - dragOffset.y);
+  });
+
+  function finishDrag() {
+    if (!activePiece) return;
+
+    activePiece.moved = true;
+    activePiece = null;
+
+    autoCheckWhenReady();
+  }
+
+  svg.addEventListener("pointerup", finishDrag);
+  svg.addEventListener("pointercancel", finishDrag);
+
+  checkBtn.addEventListener("click", checkAnswer);
+  resetBtn.addEventListener("click", () => resetSimulation(true));
+
+  resetSimulation(true);
+</script>
+</body>
+</html>
